@@ -5,12 +5,10 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "nodemon server.js",
-    "client": "ng serve --open",
+    "start": "ng serve --open",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "dev": "concurrently \"npm run client\" \"npm run start\""
+    "test": "ng test"
   },
   "dependencies": {
     "@angular/animations": "^21.2.7",
