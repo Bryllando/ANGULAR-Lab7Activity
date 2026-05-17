@@ -1,8 +1,8 @@
-# Angular 21 Auth Boilerplate (Beginner Guide)
+# Angular 21 Auth Boilerplate
 
-This project is a beginner-friendly Angular 21 boilerplate that demonstrates a complete authentication flow:
+This project is an Angular 21 boilerplate that demonstrates a complete authentication flow connected to a real API:
 
-- Email sign up + email verification
+- Email sign up + email verification (via Resend.com)
 - Login + logout
 - JWT auth header for API requests
 - Refresh tokens (cookie-based) + auto-refresh before access token expiry
@@ -14,26 +14,21 @@ This project is a beginner-friendly Angular 21 boilerplate that demonstrates a c
 ## Table of contents
 
 - [1) Prerequisites](#1-prerequisites)
-- [2) Run the app (real API)](#2-run-the-app-real-api)
-- [3) Run the app (fake backend, no API)](#3-run-the-app-fake-backend-no-api)
-- [4) Using the app (what to click)](#4-using-the-app-what-to-click)
-- [5) How authentication works](#5-how-authentication-works)
-- [6) Authorization (roles + route guards)](#6-authorization-roles--route-guards)
-- [7) Project structure (quick tour)](#7-project-structure-quick-tour)
-- [8) Troubleshooting](#8-troubleshooting)
+- [2) Run the app](#2-run-the-app)
+- [3) Using the app (what to click)](#3-using-the-app-what-to-click)
+- [4) How authentication works](#4-how-authentication-works)
+- [5) Authorization (roles + route guards)](#5-authorization-roles--route-guards)
+- [6) Project structure (quick tour)](#6-project-structure-quick-tour)
+- [7) Troubleshooting](#7-troubleshooting)
 
 ## 1) Prerequisites
 
 - Node.js (LTS recommended)
 - npm (comes with Node.js)
-- (Optional) Angular CLI:
-  - `npm i -g @angular/cli`
+- A running backend API (e.g. Express, .NET Core, etc.)
+- A Resend.com account for sending emails
 
-## 2) Run the app (real API)
-
-By default this project is set up to call a real API at:
-
-- `http://localhost:4000` (see `src/environments/environment.ts`)
+## 2) Run the app
 
 ### Step 1: install packages
 
@@ -45,9 +40,7 @@ npm install
 
 ### Step 2: start your backend API
 
-Start an API that implements the `/accounts/*` endpoints described in the [How authentication works](#5-how-authentication-works) section.
-
-The frontend expects the API to be available at `http://localhost:4000` by default.
+Start an API that implements the `/accounts/*` endpoints. The frontend expects the API to be available at `http://localhost:4000` by default in development.
 
 ### Step 3: start Angular
 
@@ -70,41 +63,14 @@ Update:
 apiUrl: 'http://localhost:4000'
 ```
 
-## 3) Run the app (fake backend, no API)
-
-If you want to run everything fully in the browser (no backend), you can enable the built-in fake backend interceptor.
-
-### Step 1: enable the fake backend provider
-
-The fake backend is already enabled by default in non-production environments in `src/app/app.module.ts`.
-
-### Step 2: run the app
-
-```bash
-npm install
-npm start
-```
-
-### How the fake backend behaves (important for beginners)
-
-* Accounts are stored in your browser `localStorage`, not in a database.
-* "Emails" (verification + reset password links) are displayed in the UI as alerts because a browser-only app can't send real emails.
-* The first registered account becomes `Admin`, and all other accounts become `User`.
-
-If you want a clean slate while using the fake backend, clear site data in your browser or remove the local storage key:
-
-* `angular-21-signup-verification-boilerplate-accounts`
-
-## 4) Using the app (what to click)
-
-This section assumes you are starting fresh and want to see the full flow.
+## 3) Using the app (what to click)
 
 ### A) Create an account
 
 1. Go to Register
 2. Fill in your details and submit
-3. If you are using the fake backend, a "verification email" will appear as an alert with a link
-4. Click the verification link (or paste it in the browser) to verify your account
+3. Check your email (Resend.com will send the verification link)
+4. Click the verification link to verify your account
 
 ### B) Login
 
@@ -115,15 +81,10 @@ This section assumes you are starting fresh and want to see the full flow.
 
 1. Go to Forgot Password
 2. Enter your email and submit
-3. If you are using the fake backend, a "reset password email" will appear as an alert with a link
+3. Check your email for the reset link
 4. Click the reset link and set a new password
 
-### D) Profile and Admin areas
-
-* Profile pages allow you to view and update your own account details.
-* The Admin area is restricted to accounts with the `Admin` role.
-
-## 5) How authentication works
+## 4) How authentication works
 
 This boilerplate uses two tokens:
 
@@ -138,7 +99,7 @@ This boilerplate uses two tokens:
 * JWT interceptor: `src/app/_helpers/jwt.interceptor.ts`
 * Error interceptor: `src/app/_helpers/error.interceptor.ts`
 
-## 6) Authorization (roles + route guards)
+## 5) Authorization (roles + route guards)
 
 Routes are protected with `AuthGuard`:
 
@@ -155,12 +116,12 @@ Key files:
 * `src/app/_models/role.ts`
 * `src/app/app-routing.module.ts`
 
-## 7) Project structure (quick tour)
+## 6) Project structure (quick tour)
 
 Most code lives under `src/app`:
 
 * `_services/` shared services (e.g. `AccountService`, `AlertService`)
-* `_helpers/` cross-cutting helpers (guards, interceptors, app initializer, fake backend)
+* `_helpers/` cross-cutting helpers (guards, interceptors, app initializer)
 * `_models/` shared types and enums (Account, Role, Alert)
 * `account/` auth screens (Login/register/verify/forgot/reset)
 * `profile/` user profile screens
@@ -168,15 +129,16 @@ Most code lives under `src/app`:
 
 The UI is styled with Bootstrap 5 via a CDN link in `src/index.html`.
 
-## 8) Troubleshooting
+## 7) Troubleshooting
 
 ### The app redirects me back to login after refresh
 
-* If you are using a real API, make sure it sets a refresh token cookie and supports `POST /accounts/refresh-token`.
-* If your API runs on a different origin, you must configure CORS to allow credentials.
+* Make sure your API sets a refresh token cookie and supports `POST /accounts/refresh-token`.
+* If your API runs on a different origin, you must configure CORS to allow credentials and set the correct origin.
 
 ### Run unit tests
 
 ```bash
 npm test
 ```
+
