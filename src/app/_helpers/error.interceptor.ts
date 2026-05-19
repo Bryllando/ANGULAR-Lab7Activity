@@ -17,7 +17,12 @@ export class ErrorInterceptor implements HttpInterceptor {
             }
 
             const error = err?.error?.message || err.statusText;
-            console.error(err);
+            
+            // silence refresh-token errors to keep console clean
+            if (!request.url.includes('/accounts/refresh-token')) {
+                console.error(err);
+            }
+
             return throwError(() => error);
         }))
     }
