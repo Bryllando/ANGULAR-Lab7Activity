@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { first, timeout, catchError } from 'rxjs/operators';
@@ -7,16 +7,9 @@ import { of } from 'rxjs';
 import { AccountService, AlertService } from '@app/_services';
 import { MustMatch } from '@app/_helpers';
 
-enum TokenStatus {
-    Validating,
-    Valid,
-    Invalid
-}
-
 @Component({ templateUrl: 'reset-password.component.html', standalone: false })
 export class ResetPasswordComponent implements OnInit {
-    TokenStatus = TokenStatus;
-    tokenStatus = TokenStatus.Validating;
+    status = 'validating';
     token?: string;
     form!: FormGroup;
     loading = false;
@@ -27,7 +20,8 @@ export class ResetPasswordComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private accountService: AccountService,
-        private alertService: AlertService
+        private alertService: AlertService,
+        private cd: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
@@ -42,30 +36,35 @@ export class ResetPasswordComponent implements OnInit {
         let token = queryParams['token'] || queryParams['Token'];
 
         if (!token) {
-            this.tokenStatus = TokenStatus.Invalid;
+            console.log('No token found in query params');
+            this.status = 'invalid';
             return;
         }
 
         // replace spaces with pluses in case the token was corrupted by the browser/email client
         token = token.replace(/ /g, '+');
+        console.log('Validating token...');
 
         this.accountService.validateResetToken(token)
             .pipe(
                 timeout(10000),
                 first(),
                 catchError(error => {
-                    console.error('Token validation failed:', error);
-                    this.tokenStatus = TokenStatus.Invalid;
+                    console.error('Token validation failed error:', error);
+                    this.status = 'invalid';
+                    this.cd.detectChanges();
                     return of(null);
                 })
             )
             .subscribe(result => {
                 if (result !== null) {
+                    console.log('Token is valid');
                     this.token = token;
-                    this.tokenStatus = TokenStatus.Valid;
+                    this.status = 'valid';
                     // remove token from url to prevent http referer leakage
                     this.router.navigate([], { relativeTo: this.route, replaceUrl: true });
                 }
+                this.cd.detectChanges();
             });
     }
 
@@ -94,6 +93,7 @@ export class ResetPasswordComponent implements OnInit {
                 error: error => {
                     this.alertService.error(error);
                     this.loading = false;
+                    this.cd.detectChanges();
                 }
             });
     }
