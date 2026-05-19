@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { first } from 'rxjs/operators';
+import { first, timeout, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 import { AccountService, AlertService } from '@app/_services';
 import { MustMatch } from '@app/_helpers';
@@ -37,25 +38,33 @@ export class ResetPasswordComponent implements OnInit {
             validator: MustMatch('password', 'confirmPassword')
         });
 
-        const token = this.route.snapshot.queryParams['token'];
+        const queryParams = this.route.snapshot.queryParams;
+        let token = queryParams['token'] || queryParams['Token'];
 
         if (!token) {
             this.tokenStatus = TokenStatus.Invalid;
             return;
         }
 
-        // remove token from url to prevent http referer leakage
-        this.router.navigate([], { relativeTo: this.route, replaceUrl: true });
+        // replace spaces with pluses in case the token was corrupted by the browser/email client
+        token = token.replace(/ /g, '+');
 
         this.accountService.validateResetToken(token)
-            .pipe(first())
-            .subscribe({
-                next: () => {
+            .pipe(
+                timeout(10000),
+                first(),
+                catchError(error => {
+                    console.error('Token validation failed:', error);
+                    this.tokenStatus = TokenStatus.Invalid;
+                    return of(null);
+                })
+            )
+            .subscribe(result => {
+                if (result !== null) {
                     this.token = token;
                     this.tokenStatus = TokenStatus.Valid;
-                },
-                error: () => {
-                    this.tokenStatus = TokenStatus.Invalid;
+                    // remove token from url to prevent http referer leakage
+                    this.router.navigate([], { relativeTo: this.route, replaceUrl: true });
                 }
             });
     }
